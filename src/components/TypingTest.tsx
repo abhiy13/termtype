@@ -34,10 +34,14 @@ export function TypingTest() {
   // Get quote length range based on setting
   const getQuoteLengthRange = () => {
     switch (settings.quoteLength) {
-      case "short": return { min: 30, max: 80 }
-      case "medium": return { min: 60, max: 140 }
-      case "long": return { min: 120, max: 250 }
-      default: return { min: 40, max: 120 }
+      case "short":
+        return { min: 30, max: 80 }
+      case "medium":
+        return { min: 60, max: 140 }
+      case "long":
+        return { min: 120, max: 250 }
+      default:
+        return { min: 40, max: 120 }
     }
   }
 
@@ -107,9 +111,8 @@ export function TypingTest() {
   const closePalette = () => setPaletteOpen(false)
 
   // Settings display text
-  const settingsText = settings.mode === "words"
-    ? `${settings.wordCount} words`
-    : `${settings.quoteLength} quotes`
+  const settingsText =
+    settings.mode === "words" ? `${settings.wordCount} words` : `${settings.quoteLength} quotes`
 
   // When palette is open, show settings screen instead of main UI
   if (paletteOpen) {
@@ -184,15 +187,9 @@ export function TypingTest() {
       <StatusMessage testState={testState} />
 
       <box style={{ height: 1 }}>
-        {testState === "idle" && (
-          <text fg="#3c3e41">? settings · esc restart</text>
-        )}
-        {testState === "active" && (
-          <text fg="#3c3e41">esc pause · ctrl+c exit</text>
-        )}
-        {testState === "paused" && (
-          <text fg="#3c3e41">esc resume · ctrl+c exit</text>
-        )}
+        {testState === "idle" && <text fg="#3c3e41">? settings · esc restart</text>}
+        {testState === "active" && <text fg="#3c3e41">esc pause · ctrl+c exit</text>}
+        {testState === "paused" && <text fg="#3c3e41">esc resume · ctrl+c exit</text>}
       </box>
     </box>
   )

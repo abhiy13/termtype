@@ -7,10 +7,10 @@ interface MetricsDisplayProps {
 
 // MonkeyType-inspired color scheme
 const COLORS = {
-  label: "#646669",      // Subtle gray for labels
-  value: "#E2B714",      // Yellow accent for values
-  separator: "#2c2e31",  // Darker separator
-  error: "#ca4754",      // Red for errors
+  label: "#646669", // Subtle gray for labels
+  value: "#E2B714", // Yellow accent for values
+  separator: "#2c2e31", // Darker separator
+  error: "#ca4754", // Red for errors
 }
 
 export function MetricsDisplay({ metrics, showErrors = false }: MetricsDisplayProps) {

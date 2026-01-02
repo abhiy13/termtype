@@ -8,16 +8,22 @@ interface QuoteDisplayProps {
 
 // MonkeyType-inspired color scheme
 const COLORS = {
-  untyped: "#646669",      // Subtle gray for untyped text
-  correct: "#d1d0c5",      // Off-white for correct characters
-  error: "#ca4754",        // Red for errors
-  errorBg: "#572B2B",      // Dark red background for errors
-  cursor: "#E2B714",       // MonkeyType yellow for cursor
-  cursorBg: "#E2B714",     // Yellow background for cursor block
-  paused: "#3c3e41",       // Dimmed when paused
+  untyped: "#646669", // Subtle gray for untyped text
+  correct: "#d1d0c5", // Off-white for correct characters
+  error: "#ca4754", // Red for errors
+  errorBg: "#572B2B", // Dark red background for errors
+  cursor: "#E2B714", // MonkeyType yellow for cursor
+  cursorBg: "#E2B714", // Yellow background for cursor block
+  paused: "#3c3e41", // Dimmed when paused
 }
 
-export function QuoteDisplay({ quote, userInput, cursorPosition, cursorVisible, isPaused = false }: QuoteDisplayProps) {
+export function QuoteDisplay({
+  quote,
+  userInput,
+  cursorPosition,
+  cursorVisible,
+  isPaused = false,
+}: QuoteDisplayProps) {
   return (
     <box style={{ flexDirection: "row", flexWrap: "wrap", gap: 0, justifyContent: "center" }}>
       {quote.split("").map((char, index) => {

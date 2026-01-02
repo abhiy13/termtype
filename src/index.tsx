@@ -7,7 +7,7 @@ const renderer = await createCliRenderer()
 const root = createRoot(renderer)
 
 root.render(
-    <SettingsProvider>
-        <TypingTest />
-    </SettingsProvider>
+  <SettingsProvider>
+    <TypingTest />
+  </SettingsProvider>
 )

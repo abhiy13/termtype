@@ -47,7 +47,12 @@ export function calculateErrors(userInput: string, quote: string): number {
 /**
  * Calculate elapsed time in seconds
  */
-export function calculateElapsedTime(startTime: number | null, endTime: number | null, currentTime: number, pausedDuration = 0): number {
+export function calculateElapsedTime(
+  startTime: number | null,
+  endTime: number | null,
+  currentTime: number,
+  pausedDuration = 0
+): number {
   if (!startTime) return 0
   const end = endTime || currentTime
   return Math.max(0, (end - startTime - pausedDuration) / 1000)
@@ -56,7 +61,14 @@ export function calculateElapsedTime(startTime: number | null, endTime: number |
 /**
  * Calculate all typing metrics
  */
-export function calculateMetrics(userInput: string, quote: string, startTime: number | null, endTime: number | null, currentTime: number, pausedDuration = 0): TypingTestMetrics {
+export function calculateMetrics(
+  userInput: string,
+  quote: string,
+  startTime: number | null,
+  endTime: number | null,
+  currentTime: number,
+  pausedDuration = 0
+): TypingTestMetrics {
   const elapsedTime = calculateElapsedTime(startTime, endTime, currentTime, pausedDuration)
   const errors = calculateErrors(userInput, quote)
   const correctChars = Math.max(0, userInput.length - errors)

@@ -49,7 +49,14 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
   const [pausedAt, setPausedAt] = useState<number | null>(null)
   const [totalPausedDuration, setTotalPausedDuration] = useState(0)
 
-  const metrics = calculateMetrics(userInput, quote, startTime, endTime, currentTime, totalPausedDuration)
+  const metrics = calculateMetrics(
+    userInput,
+    quote,
+    startTime,
+    endTime,
+    currentTime,
+    totalPausedDuration
+  )
 
   const reset = useCallback(() => {
     setUserInput("")
@@ -93,10 +100,18 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
 
     if (testState !== "active") {
       // Don't capture special keys when idle - they're for mode switching or settings
-      if (testState === "idle" && (key.sequence === "1" || key.sequence === "2" || key.sequence === "?")) {
+      if (
+        testState === "idle" &&
+        (key.sequence === "1" || key.sequence === "2" || key.sequence === "?")
+      ) {
         return
       }
-      if (testState === "idle" && key.sequence && key.sequence.length === 1 && key.name !== "escape") {
+      if (
+        testState === "idle" &&
+        key.sequence &&
+        key.sequence.length === 1 &&
+        key.name !== "escape"
+      ) {
         const now = Date.now()
         setStartTime(now)
         setTestState("active")
@@ -121,7 +136,9 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
         setUserInput((prev: string) => prev.slice(0, wordBoundary) + prev.slice(cursorPosition))
         setCursorPosition(wordBoundary)
       } else if (cursorPosition > 0) {
-        setUserInput((prev: string) => prev.slice(0, cursorPosition - 1) + prev.slice(cursorPosition))
+        setUserInput(
+          (prev: string) => prev.slice(0, cursorPosition - 1) + prev.slice(cursorPosition)
+        )
         setCursorPosition((prev: number) => prev - 1)
       }
       return
@@ -132,7 +149,9 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
         const wordBoundary = findNextWordBoundary(userInput, cursorPosition)
         setUserInput((prev: string) => prev.slice(0, cursorPosition) + prev.slice(wordBoundary))
       } else if (cursorPosition < userInput.length) {
-        setUserInput((prev: string) => prev.slice(0, cursorPosition) + prev.slice(cursorPosition + 1))
+        setUserInput(
+          (prev: string) => prev.slice(0, cursorPosition) + prev.slice(cursorPosition + 1)
+        )
       }
       return
     }
@@ -171,7 +190,9 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
       const char = key.sequence
 
       if (userInput.length + 1 === quote.length && char === quote[userInput.length]) {
-        setUserInput((prev: string) => prev.slice(0, cursorPosition) + char + prev.slice(cursorPosition))
+        setUserInput(
+          (prev: string) => prev.slice(0, cursorPosition) + char + prev.slice(cursorPosition)
+        )
         setCursorPosition((prev: number) => prev + 1)
         setEndTime(Date.now())
         setTestState("completed")
@@ -179,7 +200,9 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
       }
 
       if (userInput.length < quote.length) {
-        setUserInput((prev: string) => prev.slice(0, cursorPosition) + char + prev.slice(cursorPosition))
+        setUserInput(
+          (prev: string) => prev.slice(0, cursorPosition) + char + prev.slice(cursorPosition)
+        )
         setCursorPosition((prev: number) => prev + 1)
       }
     }
