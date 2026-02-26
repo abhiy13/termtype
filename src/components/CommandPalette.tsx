@@ -1,6 +1,8 @@
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useKeyboard } from "@opentui/react"
+import type { SelectOption } from "@opentui/core"
 import type { Settings, TestMode, WordCount, QuoteLength } from "../context/SettingsContext"
+import { ensureReadableColor, getMutedColor, blendColors } from "../utils/colors"
 
 interface CommandPaletteProps {
   isOpen: boolean
@@ -10,20 +12,16 @@ interface CommandPaletteProps {
 }
 
 const COLORS = {
-  bg: "#232323",
   border: "#E2B714",
-  title: "#E2B714",
-  label: "#646669",
-  option: "#d1d0c5",
   active: "#E2B714",
   hint: "#3c3e41",
+  description: "#646669",
 }
 
 const WORD_COUNTS: WordCount[] = [10, 25, 50, 100]
 const QUOTE_LENGTHS: QuoteLength[] = ["short", "medium", "long"]
 
-type Section = "mode" | "wordCount" | "quoteLength"
-const SECTIONS: Section[] = ["mode", "wordCount", "quoteLength"]
+type Section = "mode" | "wordCount" | "quoteLength" | "theme"
 
 export function CommandPalette({
   isOpen,
@@ -32,6 +30,31 @@ export function CommandPalette({
   onClose,
 }: CommandPaletteProps) {
   const [activeSection, setActiveSection] = useState<number>(0)
+  const sections: Section[] =
+    settings.mode === "words"
+      ? ["mode", "wordCount", "theme"]
+      : ["mode", "quoteLength", "theme"]
+  const themeIndex = sections.indexOf("theme")
+  const [themeField, setThemeField] = useState<"font" | "background">("font")
+  const [focusMode, setFocusMode] = useState<"list" | "theme">("list")
+  const [fontInput, setFontInput] = useState(settings.fontColor)
+  const [backgroundInput, setBackgroundInput] = useState(settings.backgroundColor)
+  const isThemeActive = activeSection === themeIndex
+
+  useEffect(() => {
+    setFontInput(settings.fontColor)
+    setBackgroundInput(settings.backgroundColor)
+  }, [settings.fontColor, settings.backgroundColor])
+
+  useEffect(() => {
+    setFocusMode(isThemeActive ? "theme" : "list")
+  }, [isThemeActive])
+
+  useEffect(() => {
+    if (activeSection >= sections.length) {
+      setActiveSection(sections.length - 1)
+    }
+  }, [activeSection, sections.length])
 
   useKeyboard((key) => {
     if (!isOpen) return
@@ -41,18 +64,19 @@ export function CommandPalette({
       return
     }
 
-    // Navigate sections with up/down
-    if (key.name === "up") {
-      setActiveSection((prev) => Math.max(0, prev - 1))
-      return
-    }
-    if (key.name === "down") {
-      setActiveSection((prev) => Math.min(SECTIONS.length - 1, prev + 1))
+    if (key.name === "tab" && isThemeActive) {
+      setFocusMode((prev) => (prev === "list" ? "theme" : "list"))
       return
     }
 
-    // Navigate options with left/right
-    const section = SECTIONS[activeSection]
+    const section = sections[activeSection]
+    if (section === "theme" && focusMode === "theme") {
+      if (key.name === "up" || key.name === "down") {
+        setThemeField((prev) => (prev === "font" ? "background" : "font"))
+      }
+      return
+    }
+
     if (key.name === "left" || key.name === "right") {
       const direction = key.name === "left" ? -1 : 1
 
@@ -75,13 +99,26 @@ export function CommandPalette({
 
   if (!isOpen) return null
 
-  const renderOption = (value: string, isActive: boolean, isSectionActive: boolean) => (
-    <text
-      fg={isSectionActive && isActive ? COLORS.active : isActive ? COLORS.option : COLORS.label}
-    >
-      {isActive ? `[${value}]` : ` ${value} `}
-    </text>
-  )
+  const options = useMemo<SelectOption[]>(() => {
+    const modeText = settings.mode === "words" ? "words" : "quotes"
+    if (settings.mode === "words") {
+      return [
+        { name: "mode", description: modeText, value: "mode" },
+        { name: "word count", description: String(settings.wordCount), value: "wordCount" },
+        { name: "theme", description: "font + background", value: "theme" },
+      ]
+    }
+    return [
+      { name: "mode", description: modeText, value: "mode" },
+      { name: "quote length", description: settings.quoteLength, value: "quoteLength" },
+      { name: "theme", description: "font + background", value: "theme" },
+    ]
+  }, [settings.mode, settings.wordCount, settings.quoteLength])
+
+  const paletteBg = settings.backgroundColor
+  const paletteText = ensureReadableColor(settings.fontColor, paletteBg)
+  const paletteMuted = getMutedColor(paletteText, paletteBg, 0.5)
+  const selectedBg = blendColors(paletteText, paletteBg, 0.2)
 
   return (
     <box
@@ -90,74 +127,89 @@ export function CommandPalette({
         border: true,
         borderColor: COLORS.border,
         padding: 2,
-        gap: 1,
-        width: 50,
+        gap: 2,
+        width: 56,
+        backgroundColor: paletteBg,
       }}
     >
-      <text fg={COLORS.title}>⚙ Settings</text>
+      <text fg={COLORS.active}>⚙ Settings</text>
+      <select
+        focused={focusMode === "list"}
+        options={options}
+        selectedIndex={activeSection}
+        onChange={(index) => {
+          if (index !== null && index >= 0) {
+            setActiveSection(index)
+          }
+        }}
+        showDescription={true}
+        itemSpacing={1}
+        style={{ height: 6 }}
+        backgroundColor={paletteBg}
+        textColor={paletteText}
+        focusedBackgroundColor="#2c2e31"
+        focusedTextColor={paletteText}
+        selectedBackgroundColor={selectedBg}
+        selectedTextColor={COLORS.active}
+        descriptionColor={paletteMuted}
+        selectedDescriptionColor={COLORS.active}
+        wrapSelection={true}
+        showScrollIndicator={false}
+      />
 
-      {/* Mode */}
-      <box style={{ flexDirection: "column", gap: 0 }}>
-        <text fg={activeSection === 0 ? COLORS.active : COLORS.label}>
-          {activeSection === 0 ? "▸ " : "  "}mode
-        </text>
-        <box style={{ flexDirection: "row", gap: 1, paddingLeft: 4 }}>
-          {renderOption("words", settings.mode === "words", activeSection === 0)}
-          {renderOption("quotes", settings.mode === "quotes", activeSection === 0)}
-        </box>
-      </box>
-
-      {/* Word Count (only show if mode is words) */}
-      {settings.mode === "words" && (
-        <box style={{ flexDirection: "column", gap: 0 }}>
-          <text fg={activeSection === 1 ? COLORS.active : COLORS.label}>
-            {activeSection === 1 ? "▸ " : "  "}word count
-          </text>
-          <box style={{ flexDirection: "row", gap: 1, paddingLeft: 4 }}>
-            {WORD_COUNTS.map((count) => (
-              <text
-                key={count}
-                fg={
-                  activeSection === 1 && settings.wordCount === count
-                    ? COLORS.active
-                    : settings.wordCount === count
-                      ? COLORS.option
-                      : COLORS.label
+      {isThemeActive && (
+        <box style={{ flexDirection: "column", gap: 1 }}>
+          <box style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
+            <text fg={themeField === "font" ? COLORS.active : paletteText}>font</text>
+            <input
+              focused={focusMode === "theme" && themeField === "font"}
+              value={fontInput}
+              placeholder="#d1d0c5"
+              onChange={(value) => setFontInput(value)}
+              onSubmit={(value) => {
+                const next = value.trim()
+                if (next.length > 0) {
+                  onUpdateSettings({ fontColor: next })
                 }
-              >
-                {settings.wordCount === count ? `[${count}]` : ` ${count} `}
-              </text>
-            ))}
+              }}
+              backgroundColor={paletteBg}
+              textColor={paletteText}
+              focusedBackgroundColor="#2c2e31"
+              focusedTextColor={paletteText}
+              placeholderColor={paletteMuted}
+              cursorColor={COLORS.active}
+            />
           </box>
+          <box style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
+            <text fg={themeField === "background" ? COLORS.active : paletteText}>bg</text>
+            <input
+              focused={focusMode === "theme" && themeField === "background"}
+              value={backgroundInput}
+              placeholder="#232323"
+              onChange={(value) => setBackgroundInput(value)}
+              onSubmit={(value) => {
+                const next = value.trim()
+                if (next.length > 0) {
+                  onUpdateSettings({ backgroundColor: next })
+                }
+              }}
+              backgroundColor={paletteBg}
+              textColor={paletteText}
+              focusedBackgroundColor="#2c2e31"
+              focusedTextColor={paletteText}
+              placeholderColor={paletteMuted}
+              cursorColor={COLORS.active}
+            />
+          </box>
+          <text fg={paletteMuted}>type a color (hex or name) · enter to apply</text>
         </box>
       )}
 
-      {/* Quote Length (only show if mode is quotes) */}
-      {settings.mode === "quotes" && (
-        <box style={{ flexDirection: "column", gap: 0 }}>
-          <text fg={activeSection === 2 ? COLORS.active : COLORS.label}>
-            {activeSection === 2 ? "▸ " : "  "}quote length
-          </text>
-          <box style={{ flexDirection: "row", gap: 1, paddingLeft: 4 }}>
-            {QUOTE_LENGTHS.map((len) => (
-              <text
-                key={len}
-                fg={
-                  activeSection === 2 && settings.quoteLength === len
-                    ? COLORS.active
-                    : settings.quoteLength === len
-                      ? COLORS.option
-                      : COLORS.label
-                }
-              >
-                {settings.quoteLength === len ? `[${len}]` : ` ${len} `}
-              </text>
-            ))}
-          </box>
-        </box>
-      )}
-
-      <text fg={COLORS.hint}>↑↓ navigate · ←→ change · esc close</text>
+      <text fg={paletteMuted}>
+        {isThemeActive
+          ? "tab to switch list/inputs · ↑↓ field · esc close"
+          : "↑↓ navigate · ←→ change · esc close"}
+      </text>
     </box>
   )
 }

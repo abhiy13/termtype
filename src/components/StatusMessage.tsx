@@ -2,6 +2,7 @@ import type { TestState } from "../types"
 
 interface StatusMessageProps {
   testState: TestState
+  hintColor?: string
 }
 
 // MonkeyType-inspired color scheme
@@ -11,25 +12,25 @@ const COLORS = {
   warning: "#E2B714", // Yellow for warnings/pause
 }
 
-export function StatusMessage({ testState }: StatusMessageProps) {
+export function StatusMessage({ testState, hintColor = COLORS.hint }: StatusMessageProps) {
   // Always render a fixed-height container to prevent layout shifts
   return (
     <box
       style={{ flexDirection: "column", height: 3, alignItems: "center", justifyContent: "center" }}
     >
-      {testState === "idle" && <text fg={COLORS.hint}>start typing to begin the test</text>}
+      {testState === "idle" && <text fg={hintColor}>start typing to begin the test</text>}
 
       {testState === "completed" && (
         <>
           <text fg={COLORS.success}>✓ Test Complete</text>
-          <text fg={COLORS.hint}>press any key to restart</text>
+          <text fg={hintColor}>press any key to restart</text>
         </>
       )}
 
       {testState === "paused" && (
         <>
           <text fg={COLORS.warning}>⏸ PAUSED</text>
-          <text fg={COLORS.hint}>press esc to resume</text>
+          <text fg={hintColor}>press esc to resume</text>
         </>
       )}
 
