@@ -3,6 +3,8 @@ import type { TypingTestMetrics } from "../types"
 interface MetricsDisplayProps {
   metrics: TypingTestMetrics
   showErrors?: boolean
+  primaryColor?: string
+  mutedColor?: string
 }
 
 // MonkeyType-inspired color scheme
@@ -13,7 +15,12 @@ const COLORS = {
   error: "#ca4754", // Red for errors
 }
 
-export function MetricsDisplay({ metrics, showErrors = false }: MetricsDisplayProps) {
+export function MetricsDisplay({
+  metrics,
+  showErrors = false,
+  primaryColor = COLORS.value,
+  mutedColor = COLORS.label,
+}: MetricsDisplayProps) {
   const { wpm, accuracy, elapsedTime, errors } = metrics
 
   const formatWPM = wpm === 0 ? "0" : wpm.toFixed(0)
@@ -22,22 +29,22 @@ export function MetricsDisplay({ metrics, showErrors = false }: MetricsDisplayPr
   return (
     <box style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
       <box style={{ flexDirection: "column", gap: 0, alignItems: "center" }}>
-        <text fg={COLORS.label}>wpm</text>
-        <text fg={COLORS.value}>{formatWPM}</text>
+        <text fg={mutedColor}>wpm</text>
+        <text fg={primaryColor}>{formatWPM}</text>
       </box>
 
       <text fg={COLORS.separator}>│</text>
 
       <box style={{ flexDirection: "column", gap: 0, alignItems: "center" }}>
-        <text fg={COLORS.label}>acc</text>
-        <text fg={COLORS.value}>{accuracy}%</text>
+        <text fg={mutedColor}>acc</text>
+        <text fg={primaryColor}>{accuracy}%</text>
       </box>
 
       <text fg={COLORS.separator}>│</text>
 
       <box style={{ flexDirection: "column", gap: 0, alignItems: "center" }}>
-        <text fg={COLORS.label}>time</text>
-        <text fg={COLORS.value}>{formatTime}s</text>
+        <text fg={mutedColor}>time</text>
+        <text fg={primaryColor}>{formatTime}s</text>
       </box>
 
       {showErrors && (
@@ -45,8 +52,8 @@ export function MetricsDisplay({ metrics, showErrors = false }: MetricsDisplayPr
           <text fg={COLORS.separator}>│</text>
 
           <box style={{ flexDirection: "column", gap: 0, alignItems: "center" }}>
-            <text fg={COLORS.label}>errors</text>
-            <text fg={errors > 0 ? COLORS.error : COLORS.value}>{errors}</text>
+            <text fg={mutedColor}>errors</text>
+            <text fg={errors > 0 ? COLORS.error : primaryColor}>{errors}</text>
           </box>
         </>
       )}

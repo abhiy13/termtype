@@ -4,6 +4,11 @@ interface QuoteDisplayProps {
   cursorPosition: number
   cursorVisible: boolean
   isPaused?: boolean
+  correctColor?: string
+  untypedColor?: string
+  pausedColor?: string
+  cursorTextColor?: string
+  cursorBgColor?: string
 }
 
 // MonkeyType-inspired color scheme
@@ -23,18 +28,23 @@ export function QuoteDisplay({
   cursorPosition,
   cursorVisible,
   isPaused = false,
+  correctColor = COLORS.correct,
+  untypedColor = COLORS.untyped,
+  pausedColor = COLORS.paused,
+  cursorTextColor = "#232323",
+  cursorBgColor = COLORS.cursorBg,
 }: QuoteDisplayProps) {
   return (
     <box style={{ flexDirection: "row", flexWrap: "wrap", gap: 0, justifyContent: "center" }}>
       {quote.split("").map((char, index) => {
-        let color = isPaused ? COLORS.paused : COLORS.untyped
+        let color = isPaused ? pausedColor : untypedColor
         let bgColor: string | undefined = undefined
         let isCursor = false
 
         if (!isPaused && index < userInput.length) {
           // Already typed characters
           if (userInput[index] === char) {
-            color = COLORS.correct
+            color = correctColor
           } else {
             color = COLORS.error
             bgColor = COLORS.errorBg
@@ -43,8 +53,8 @@ export function QuoteDisplay({
           // Current cursor position
           isCursor = true
           if (cursorVisible) {
-            color = "#232323"
-            bgColor = COLORS.cursorBg
+            color = cursorTextColor
+            bgColor = cursorBgColor
           } else {
             color = COLORS.cursor
           }

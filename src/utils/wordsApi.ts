@@ -3,6 +3,10 @@
 
 import { homedir } from "os"
 import { join } from "path"
+import { FALLBACK_WORD_LIST } from "../constants/fallbacks"
+import { ensureDir } from "./fs"
+import { fetchWithTimeout } from "./fetch"
+import { logError } from "./logger"
 
 const WORDS_URL =
   "https://raw.githubusercontent.com/monkeytypegame/monkeytype/master/frontend/static/languages/english.json"
@@ -40,13 +44,14 @@ async function readWordsCache(): Promise<WordsCacheData | null> {
 
 async function writeWordsCache(words: string[]): Promise<void> {
   try {
+    await ensureDir(CACHE_DIR)
     const cacheData: WordsCacheData = {
       timestamp: Date.now(),
       words,
     }
     await Bun.write(WORDS_CACHE_FILE, JSON.stringify(cacheData))
-  } catch {
-    // Cache write failed
+  } catch (error) {
+    logError("Failed to write words cache", error)
   }
 }
 
@@ -74,7 +79,7 @@ export async function fetchMonkeyTypeWords(): Promise<string[]> {
 
     // Fetch from network
     try {
-      const response = await fetch(WORDS_URL)
+      const response = await fetchWithTimeout(WORDS_URL)
       if (!response.ok) {
         throw new Error(`Failed to fetch words: ${response.status}`)
       }
@@ -83,7 +88,7 @@ export async function fetchMonkeyTypeWords(): Promise<string[]> {
       await writeWordsCache(memoryWordsCache)
       return memoryWordsCache
     } catch (error) {
-      console.error("Error fetching MonkeyType words:", error)
+      logError("Error fetching MonkeyType words", error)
 
       // Use expired cache as fallback
       if (diskCache) {
@@ -92,28 +97,7 @@ export async function fetchMonkeyTypeWords(): Promise<string[]> {
       }
 
       // Fallback to basic word list
-      return [
-        "the",
-        "be",
-        "to",
-        "of",
-        "and",
-        "a",
-        "in",
-        "that",
-        "have",
-        "it",
-        "for",
-        "not",
-        "on",
-        "with",
-        "he",
-        "as",
-        "you",
-        "do",
-        "at",
-        "this",
-      ]
+      return [...FALLBACK_WORD_LIST]
     } finally {
       wordsFetchPromise = null
     }

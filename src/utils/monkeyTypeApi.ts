@@ -3,6 +3,9 @@
 
 import { homedir } from "os"
 import { join } from "path"
+import { ensureDir } from "./fs"
+import { fetchWithTimeout } from "./fetch"
+import { logError } from "./logger"
 
 const QUOTES_URL =
   "https://raw.githubusercontent.com/monkeytypegame/monkeytype/master/frontend/static/quotes/english.json"
@@ -32,17 +35,6 @@ interface CacheData {
 let memoryCache: MonkeyTypeQuote[] | null = null
 let fetchPromise: Promise<{ quotes: MonkeyTypeQuote[]; fromNetwork: boolean }> | null = null
 
-async function ensureCacheDir(): Promise<void> {
-  try {
-    const dir = Bun.file(CACHE_DIR)
-    if (!(await dir.exists())) {
-      await Bun.write(join(CACHE_DIR, ".keep"), "")
-    }
-  } catch {
-    // Ignore errors - we'll just fetch fresh
-  }
-}
-
 async function readCache(): Promise<CacheData | null> {
   try {
     const file = Bun.file(CACHE_FILE)
@@ -58,14 +50,14 @@ async function readCache(): Promise<CacheData | null> {
 
 async function writeCache(quotes: MonkeyTypeQuote[]): Promise<void> {
   try {
-    await ensureCacheDir()
+    await ensureDir(CACHE_DIR)
     const cacheData: CacheData = {
       timestamp: Date.now(),
       quotes,
     }
     await Bun.write(CACHE_FILE, JSON.stringify(cacheData))
-  } catch {
-    // Cache write failed, continue without caching
+  } catch (error) {
+    logError("Failed to write quotes cache", error)
   }
 }
 
@@ -98,7 +90,7 @@ export async function fetchMonkeyTypeQuotes(): Promise<{
 
     // Fetch from network
     try {
-      const response = await fetch(QUOTES_URL)
+      const response = await fetchWithTimeout(QUOTES_URL)
       if (!response.ok) {
         throw new Error(`Failed to fetch quotes: ${response.status}`)
       }
@@ -110,7 +102,7 @@ export async function fetchMonkeyTypeQuotes(): Promise<{
 
       return { quotes: memoryCache, fromNetwork: true }
     } catch (error) {
-      console.error("Error fetching MonkeyType quotes:", error)
+      logError("Error fetching MonkeyType quotes", error)
 
       // If we have an expired cache, use it as fallback
       if (diskCache) {
@@ -154,7 +146,7 @@ export async function getRandomMonkeyTypeQuote(
 export async function refreshQuoteCache(): Promise<{ success: boolean }> {
   memoryCache = null
   try {
-    const response = await fetch(QUOTES_URL)
+    const response = await fetchWithTimeout(QUOTES_URL)
     if (!response.ok) {
       throw new Error(`Failed to fetch quotes: ${response.status}`)
     }
@@ -162,7 +154,8 @@ export async function refreshQuoteCache(): Promise<{ success: boolean }> {
     memoryCache = data.quotes
     await writeCache(memoryCache)
     return { success: true }
-  } catch {
+  } catch (error) {
+    logError("Failed to refresh quotes cache", error)
     return { success: false }
   }
 }

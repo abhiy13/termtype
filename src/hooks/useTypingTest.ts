@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useKeyboard } from "@opentui/react"
 import type { TypingTestState } from "../types"
 import { calculateMetrics } from "../utils/metrics"
@@ -17,6 +17,7 @@ interface UseTypingTestReturn extends TypingTestState {
   reset: () => void
   restart: () => void
   togglePause: () => void
+  userResetCount: number
 }
 
 function findPreviousWordBoundary(text: string, fromPos: number): number {
@@ -40,7 +41,11 @@ function findNextWordBoundary(text: string, fromPos: number): number {
   return pos
 }
 
-export function useTypingTest(quote: string, currentTime: number): UseTypingTestReturn {
+export function useTypingTest(
+  quote: string,
+  currentTime: number,
+  inputEnabled = true
+): UseTypingTestReturn {
   const [userInput, setUserInput] = useState("")
   const [cursorPosition, setCursorPosition] = useState(0)
   const [startTime, setStartTime] = useState<number | null>(null)
@@ -48,6 +53,7 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
   const [testState, setTestState] = useState<"idle" | "active" | "paused" | "completed">("idle")
   const [pausedAt, setPausedAt] = useState<number | null>(null)
   const [totalPausedDuration, setTotalPausedDuration] = useState(0)
+  const [userResetCount, setUserResetCount] = useState(0)
 
   const metrics = calculateMetrics(
     userInput,
@@ -68,6 +74,10 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
     setTotalPausedDuration(0)
   }, [])
 
+  useEffect(() => {
+    reset()
+  }, [quote, reset])
+
   const restart = useCallback(() => {
     reset()
   }, [reset])
@@ -85,6 +95,7 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
   }, [testState, pausedAt])
 
   useKeyboard((key: KeyboardEvent) => {
+    if (!inputEnabled) return
     if (key.name === "c" && key.ctrl) {
       return
     }
@@ -93,6 +104,7 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
       if (testState === "active" || testState === "paused") {
         togglePause()
       } else {
+        setUserResetCount((prev) => prev + 1)
         reset()
       }
       return
@@ -125,6 +137,7 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
           }
         }
       } else if (testState === "completed" && key.name !== "escape") {
+        setUserResetCount((prev) => prev + 1)
         restart()
       }
       return
@@ -219,5 +232,6 @@ export function useTypingTest(quote: string, currentTime: number): UseTypingTest
     reset,
     restart,
     togglePause,
+    userResetCount,
   }
 }
